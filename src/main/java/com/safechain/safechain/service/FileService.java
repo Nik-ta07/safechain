@@ -2,11 +2,13 @@ package com.safechain.safechain.service;
 
 import com.safechain.safechain.dto.FileResponse;
 import com.safechain.safechain.dto.ShareFileRequest;
+import com.safechain.safechain.entity.ActivityLog;
 import com.safechain.safechain.entity.File;
 import com.safechain.safechain.entity.FileShare;
 import com.safechain.safechain.entity.User;
 import com.safechain.safechain.repository.FileRepository;
 import com.safechain.safechain.repository.FileShareRepository;
+import com.safechain.safechain.repository.ActivityLogRepository;
 import com.safechain.safechain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +32,7 @@ public class FileService {
     private final FileRepository fileRepository;
     private final FileShareRepository fileShareRepository;
     private final UserRepository userRepository;
+    private final ActivityLogRepository activityLogRepository;
     private final AuthService authService;
     
     @Value("${file.upload-dir}")
@@ -69,6 +72,14 @@ public class FileService {
         
         // Save to database
         File savedFile = fileRepository.save(fileEntity);
+
+        // Log activity
+        ActivityLog log = new ActivityLog();
+        log.setEventType(ActivityLog.EventType.UPLOAD);
+        log.setUser(currentUser);
+        log.setFile(savedFile);
+        log.setDetails("Uploaded file: " + savedFile.getFileName());
+        activityLogRepository.save(log);
         
         return new FileResponse(
             savedFile.getId(),
@@ -154,6 +165,14 @@ public class FileService {
         fileShare.setSharedDate(LocalDateTime.now());
         
         fileShareRepository.save(fileShare);
+
+        // Log activity
+        ActivityLog log = new ActivityLog();
+        log.setEventType(ActivityLog.EventType.SHARE);
+        log.setUser(currentUser);
+        log.setFile(file);
+        log.setDetails("Shared file with " + userToShareWith.getEmail());
+        activityLogRepository.save(log);
         
         return "File shared successfully with " + userToShareWith.getFullName();
     }
@@ -178,6 +197,14 @@ public class FileService {
             throw new RuntimeException("You don't have access to this file");
         }
         
+        // Log activity
+        ActivityLog log = new ActivityLog();
+        log.setEventType(ActivityLog.EventType.DOWNLOAD);
+        log.setUser(currentUser);
+        log.setFile(file);
+        log.setDetails("Downloaded file: " + file.getFileName());
+        activityLogRepository.save(log);
+
         return file;
     }
 }

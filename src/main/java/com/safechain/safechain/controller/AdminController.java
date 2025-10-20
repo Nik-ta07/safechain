@@ -1,7 +1,9 @@
 package com.safechain.safechain.controller;
 
 import com.safechain.safechain.dto.UserResponse;
+import com.safechain.safechain.dto.ActivityLogResponse;
 import com.safechain.safechain.service.AdminService;
+import com.safechain.safechain.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,7 @@ import java.util.List;
 public class AdminController {
     
     private final AdminService adminService;
+    private final ActivityLogService activityLogService;
     
     /**
      * Get all users (admin only)
@@ -29,6 +32,20 @@ public class AdminController {
         }
     }
     
+    /**
+     * Get all activity logs (admin only)
+     * GET /api/admin/logs
+     */
+    @GetMapping("/logs")
+    public ResponseEntity<List<ActivityLogResponse>> getAllLogs() {
+        try {
+            List<ActivityLogResponse> logs = activityLogService.getAllLogs();
+            return ResponseEntity.ok(logs);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get logs: " + e.getMessage());
+        }
+    }
+
     /**
      * Delete a user (admin only)
      * DELETE /api/admin/users/{id}
