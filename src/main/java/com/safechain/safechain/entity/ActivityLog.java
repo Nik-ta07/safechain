@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class ActivityLog {
 
     public enum EventType {
-        UPLOAD, DOWNLOAD, SHARE
+        UPLOAD, DOWNLOAD, SHARE, DELETE
     }
 
     @Id

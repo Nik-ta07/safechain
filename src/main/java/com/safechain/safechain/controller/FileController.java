@@ -23,9 +23,9 @@ import java.util.List;
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
 public class FileController {
-    
+
     private final FileService fileService;
-    
+
     /**
      * Upload a file
      * POST /api/files/upload
@@ -39,7 +39,7 @@ public class FileController {
             throw new RuntimeException("File upload failed: " + e.getMessage());
         }
     }
-    
+
     /**
      * Get user's uploaded files
      * GET /api/files/my
@@ -49,7 +49,7 @@ public class FileController {
         List<FileResponse> files = fileService.getMyFiles();
         return ResponseEntity.ok(files);
     }
-    
+
     /**
      * Get files shared with user
      * GET /api/files/shared-with-me
@@ -59,7 +59,7 @@ public class FileController {
         List<FileResponse> files = fileService.getSharedFiles();
         return ResponseEntity.ok(files);
     }
-    
+
     /**
      * Download a file
      * GET /api/files/{id}/download
@@ -68,25 +68,25 @@ public class FileController {
     public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
         try {
             File file = fileService.downloadFile(id);
-            
+
             Path filePath = Paths.get(file.getFilePath());
             Resource resource = new UrlResource(filePath.toUri());
-            
+
             if (!resource.exists()) {
                 throw new RuntimeException("File not found on disk");
             }
-            
+
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(file.getFileType()))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, 
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"" + file.getFileName() + "\"")
                     .body(resource);
-                    
+
         } catch (Exception e) {
             throw new RuntimeException("File download failed: " + e.getMessage());
         }
     }
-    
+
     /**
      * Share a file with another user
      * POST /api/files/share
@@ -98,6 +98,20 @@ public class FileController {
             return ResponseEntity.ok(message);
         } catch (Exception e) {
             throw new RuntimeException("File sharing failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Delete a file (owner or admin)
+     * DELETE /api/files/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteFile(@PathVariable Long id) {
+        try {
+            String message = fileService.deleteFile(id);
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            throw new RuntimeException("File deletion failed: " + e.getMessage());
         }
     }
 }
