@@ -1,6 +1,7 @@
 package com.safechain.safechain.service;
 
 import com.safechain.safechain.dto.FileResponse;
+import com.safechain.safechain.dto.ShareInfoResponse;
 import com.safechain.safechain.dto.ShareFileRequest;
 import com.safechain.safechain.entity.ActivityLog;
 import com.safechain.safechain.entity.File;
@@ -247,5 +248,70 @@ public class FileService {
         activityLogRepository.save(log);
 
         return "File deleted";
+    }
+
+    /**
+     * List users who have access to a file (owner-only)
+     *
+     * @param fileId the file ID
+     * @return list of share info
+     */
+    public List<ShareInfoResponse> listSharedUsers(Long fileId) {
+        User currentUser = authService.getCurrentUser();
+
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        if (!file.getUploadedBy().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("You can only view shares for files you own");
+        }
+
+        List<FileShare> shares = fileShareRepository.findByFile(file);
+        return shares.stream()
+                .map(share -> new ShareInfoResponse(
+                        share.getSharedWithUser().getId(),
+                        share.getSharedWithUser().getEmail(),
+                        share.getSharedWithUser().getFullName(),
+                        share.getSharedByUser().getEmail(),
+                        share.getSharedDate()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Revoke a specific user's access to a file (owner-only)
+     *
+     * @param fileId the file ID
+     * @param userEmail the user's email to unshare
+     * @return success message
+     */
+    public String unshareFile(Long fileId, String userEmail) {
+        User currentUser = authService.getCurrentUser();
+
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        if (!file.getUploadedBy().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("You can only modify shares for files you own");
+        }
+
+        User targetUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Optional<FileShare> existing = fileShareRepository.findByFileAndSharedWithUser(file, targetUser);
+        if (existing.isEmpty()) {
+            throw new RuntimeException("This file is not shared with the specified user");
+        }
+
+        fileShareRepository.delete(existing.get());
+
+        ActivityLog log = new ActivityLog();
+        log.setEventType(ActivityLog.EventType.UNSHARE);
+        log.setUser(currentUser);
+        log.setFile(file);
+        log.setDetails("Revoked access for " + targetUser.getEmail());
+        activityLogRepository.save(log);
+
+        return "Access revoked for " + targetUser.getFullName();
     }
 }
