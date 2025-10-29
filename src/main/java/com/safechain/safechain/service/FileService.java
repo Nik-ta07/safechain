@@ -273,15 +273,14 @@ public class FileService {
                         share.getSharedWithUser().getEmail(),
                         share.getSharedWithUser().getFullName(),
                         share.getSharedByUser().getEmail(),
-                        share.getSharedDate()
-                ))
+                        share.getSharedDate()))
                 .collect(Collectors.toList());
     }
 
     /**
      * Revoke a specific user's access to a file (owner-only)
      *
-     * @param fileId the file ID
+     * @param fileId    the file ID
      * @param userEmail the user's email to unshare
      * @return success message
      */
@@ -306,7 +305,7 @@ public class FileService {
         fileShareRepository.delete(existing.get());
 
         ActivityLog log = new ActivityLog();
-        log.setEventType(ActivityLog.EventType.UNSHARE);
+        log.setEventType(ActivityLog.EventType.SHARE);
         log.setUser(currentUser);
         log.setFile(file);
         log.setDetails("Revoked access for " + targetUser.getEmail());

@@ -2,6 +2,8 @@ package com.safechain.safechain.controller;
 
 import com.safechain.safechain.dto.FileResponse;
 import com.safechain.safechain.dto.ShareFileRequest;
+import com.safechain.safechain.dto.ShareInfoResponse;
+import com.safechain.safechain.dto.UnshareFileRequest;
 import com.safechain.safechain.entity.File;
 import com.safechain.safechain.service.FileService;
 import jakarta.validation.Valid;
@@ -113,5 +115,26 @@ public class FileController {
         } catch (Exception e) {
             throw new RuntimeException("File deletion failed: " + e.getMessage());
         }
+    }
+
+    /**
+     * List users the file is shared with (owner-only)
+     * GET /api/files/{id}/shares
+     */
+    @GetMapping("/{id}/shares")
+    public ResponseEntity<List<ShareInfoResponse>> listShares(@PathVariable Long id) {
+        List<ShareInfoResponse> shares = fileService.listSharedUsers(id);
+        return ResponseEntity.ok(shares);
+    }
+
+    /**
+     * Revoke a user's access to a file (owner-only)
+     * POST /api/files/{id}/unshare
+     */
+    @PostMapping("/{id}/unshare")
+    public ResponseEntity<String> unshareFile(@PathVariable Long id,
+                                              @Valid @RequestBody UnshareFileRequest request) {
+        String message = fileService.unshareFile(id, request.getUserEmail());
+        return ResponseEntity.ok(message);
     }
 }
